@@ -1,2 +1,2 @@
 # sdanalytics
-Demo for Service Desk Analytics app using R
+Demo for Service Desk Analytics app using R lang
