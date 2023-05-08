@@ -1,0 +1,18 @@
+- Create repo in github
+- Copy repo SSH URL
+- Create a RStudio project using version control and paste URL
+- Test git commit/pull
+- Activate renv (Tools/Project Options/Environment)
+- Install packages (usethis, pkgload, devtools, shiny, tidyverse, arrow, etc)
+- Create R folder (From Mastering Shiny book - Packages chapter)
+- Create app.R with a function wrapping all code (i.e myApp) to be called by the package
+- Restart RStudio session 
+- Use CTLR+SHIFT+L to load all pkgs
+- Create description file usethis::use_description()
+- Create and app.R in the root folder to call the main function with: pkgload::load_all(".") myApp()
+- Add the app.R in the buildignore (usethis::use_build_ignore("app.R"))
+- Add shiny, pkgload to add dependencias in your DESCRIPTION file using usethis::use_package("shiny")
+- USe #' @import shiny in the R/app.R instead of library ("pkgs")
+- Create data (usethis::use_data(stones) and inst/extdata for internal data and external datasets (usethis::use_data(stones) or read.csv(system.file("exdata", "mydata.csv", package = "myApp")))
+- Change app.R to use the pkg (myApp::myApp())
+- Add #' @export myApp to the wrapping function and Run devtools::document() 
