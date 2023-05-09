@@ -16,3 +16,4 @@
 - Create data (usethis::use_data(stones) and inst/extdata for internal data and external datasets (usethis::use_data(stones) or read.csv(system.file("exdata", "mydata.csv", package = "myApp")))
 - Change app.R to use the pkg (myApp::myApp())
 - Add #' @export myApp to the wrapping function and Run devtools::document() 
+- Add app.R in the .Rbuildignore (usethis::use_build_ignore("app.R"))

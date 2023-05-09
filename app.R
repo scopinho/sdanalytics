@@ -1,2 +1,3 @@
-devtools::load_all(".")
-myApp()
+pkgload::load_all(".")
+openUI()
+

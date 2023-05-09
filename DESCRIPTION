@@ -2,14 +2,27 @@ Package: sdanalytics
 Title: What the Package Does (One Line, Title Case)
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
+    person("Eric", "Scopinho", , "eric.scopinho@techforg.com", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+Description: Service Desk Analytics package.
+License: Apache License (>= 2)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Imports: 
+    arrow,
+    bsicons,
+    bslib (>= 0.4.2.9000),
+    devtools,
+    dplyr,
+    DT,
+    forcats,
+    ggplot2,
+    gridlayout (>= 0.2.0),
+    lubridate,
     pkgload,
-    shiny
+    shiny,
+    waiter
+Remotes: 
+    rstudio/gridlayout,
+    rstudio/bslib
