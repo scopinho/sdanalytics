@@ -1,13 +1,6 @@
-# Libraries ----------------------------------------------------------
-library(dplyr)
-library(shiny)
-library(waiter)
-library(bslib)
-library(gridlayout)
-library(ggplot2)
-library(forcats)
-library(bsicons)
-library (arrow)
+
+
+
 
 # UI --------------------------------------------------------------------------
 mod_home_UI <- function(id) {
@@ -117,7 +110,7 @@ grid_container(
   
   grid_card(
     area = "main3",
-    plotOutput(ns("plot2")),
+    DT::DTOutput((ns("table1"))),
     full_screen = TRUE
   )
 )
@@ -132,8 +125,8 @@ mod_home_Server <- function(id, params) {
     function(input, output, session) {
       
       get_total <- reactive({
-        
-        total <- params$df |> 
+
+        total <- df |>
           dplyr::filter (.data[["made_sla"]] == params$made_sla(),
                          .data[["opened_at"]] >= params$opened_at()[1],
                          .data[["opened_at"]] <= params$opened_at()[2],
@@ -142,16 +135,32 @@ mod_home_Server <- function(id, params) {
                          .data[["assignment_group"]] %in% params$assignment_group(),
                          .data[["incident_state"]] %in% params$incident_state()
                          ) |>
-          count() |> 
-          collect() |> 
-          pull() 
-        
+          dplyr::count() |>
+          dplyr::collect() |>
+          dplyr::pull()
+
         return (total)
       })
       
-      get_total_open <- reactive({
+      get_total_table <- reactive({
         
-        total <- params$df |> 
+        total <- df |>
+          dplyr::filter (.data[["made_sla"]] == params$made_sla(),
+                         .data[["opened_at"]] >= params$opened_at()[1],
+                         .data[["opened_at"]] <= params$opened_at()[2],
+                         .data[["resolved_at"]] >= params$resolved_at()[1],
+                         .data[["resolved_at"]] <= params$resolved_at()[2],
+                         .data[["assignment_group"]] %in% params$assignment_group(),
+                         .data[["incident_state"]] %in% params$incident_state()
+          ) |>
+          dplyr::collect() 
+        
+        return (total)
+      })
+
+      get_total_open <- reactive({
+
+        total <- df |>
           dplyr::filter (.data[["made_sla"]] == params$made_sla(),
                          .data[["opened_at"]] >= params$opened_at()[1],
                          .data[["opened_at"]] <= params$opened_at()[2],
@@ -159,18 +168,18 @@ mod_home_Server <- function(id, params) {
                          .data[["resolved_at"]] <= params$resolved_at()[2],
                          .data[["assignment_group"]] %in% params$assignment_group(),
                          .data[["incident_state"]] %in% c("New", "Active")
-                         
+
           ) |>
-          count() |> 
-          collect() |> 
-          pull() 
-        
+          dplyr::count() |>
+          dplyr::collect() |>
+          dplyr::pull()
+
         return (total)
       })
-      
+
       get_SLA_missed <- reactive({
-        
-        total <- params$df |> 
+
+        total <- df |>
           dplyr::filter (.data[["opened_at"]] >= params$opened_at()[1],
                          .data[["opened_at"]] <= params$opened_at()[2],
                          .data[["resolved_at"]] >= params$resolved_at()[1],
@@ -178,69 +187,68 @@ mod_home_Server <- function(id, params) {
                          .data[["assignment_group"]] %in% params$assignment_group(),
                          .data[["incident_state"]] %in% params$incident_state()
           ) |>
-          collect() |> 
-          group_by(.data[["made_sla"]]) |> 
-          summarise(n=n()) |> 
-          mutate(perc = n/sum(n)) |> 
-          filter(.data[["made_sla"]] == TRUE) |> select(perc) |> pull() |> round(digits=2)
-        
+          dplyr::collect() |>
+          dplyr::group_by(.data[["made_sla"]]) |>
+          dplyr::summarise(n=n()) |>
+          dplyr::mutate(perc = n/sum(n)) |>
+          dplyr::filter(.data[["made_sla"]] == TRUE) |> dplyr::select(perc) |> dplyr::pull() |> round(digits=2)
+
         return (total)
       })
 
       # output$plot <- renderPlot({
-      #   
       # 
-      #   
-      #   data <- mtcars |> dplyr::filter(.data[["cyl"]] == params$cyl())
-      #   
-      #     
-      #     ggplot(data, aes(x = .data[["hp"]], 
-      #                        y = .data[["mpg"]], 
-      #                        color = as_factor(.data[["cyl"]]), 
-      #                        shape = as_factor(.data[["cyl"]]))) +
       # 
-      #     geom_point(size=3, show.legend = FALSE) +
-      #     geom_smooth(show.legend = FALSE, method="lm", aes(fill=as.factor(.data[["cyl"]])))  +
-      #     geom_point(size=3, show.legend = FALSE) +
-      #     labs(color = "cyl")
+      # 
+      #   # data <- df |> dplyr::filter(.data[["opened_at"]] >= params$opened_at()[1],
+      #   #                                    .data[["opened_at"]] <= params$opened_at()[2],
+      #   #                                    .data[["resolved_at"]] >= params$resolved_at()[1],
+      #   #                                    .data[["resolved_at"]] <= params$resolved_at()[2],
+      #   #                                    .data[["assignment_group"]] %in% params$assignment_group(),
+      #   #                                    .data[["incident_state"]] %in% params$incident_state())  |> 
+      #   #   dplyr::slice_head() |> 
+      #   #   dplyr::collect()
       #     
-      #     
+      # 
+      #     ggplot(df |> collect(), aes(x = .data[["opened_at"]],
+      #                        y = .data[["incident_state"]],
+      #                        color = as_factor(.data[["incident_state"]]),
+      #                        shape = as_factor(.data[["incident_state"]]))) 
+      #   # +
+      #   # 
+      #   #   geom_point(size=3, show.legend = FALSE) +
+      #   #   geom_smooth(show.legend = FALSE, method="lm", aes(fill=as.factor(.data[["incident_state"]])))  +
+      #   #   geom_point(size=3, show.legend = FALSE) +
+      #   #   labs(color = "incident_state")
+      # 
+      # 
       # 
       # })
       
       
-      # output$plot2 <- renderPlot({
-      #   
-      #   data <- mtcars |> dplyr::filter(.data[["cyl"]] == params$cyl())
-      #   
-      #   
-      #   ggplot(data, aes(x = .data[["hp"]], 
-      #                    y = .data[["mpg"]],
-      #                    color = as_factor(.data[["cyl"]]), 
-      #                    shape = as_factor(.data[["cyl"]]))) +
-      #     geom_point(size=3, show.legend = FALSE) +
-      #     scale_color_discrete(labels = params$cyl()) +
-      #     labs(color = "cyl")
-      #     
-      # 
-      # })
+      output$table1 <- DT::renderDT({
+        
+        get_total_table()
+
+      })
       
       output$valueBox1<- renderUI({
+        
         h3(HTML(
-          glue::glue("{get_total()} Tickets"))
+          glue(" {get_total()} Tickets"))
           )
         })
 
       output$valueBox2 <- renderUI({
 
         h3(HTML(
-          glue::glue("SLA: {get_SLA_missed()}%"))
+          glue("SLA: {get_SLA_missed()}%"))
         )
       })
 
       output$valueBox3 <- renderUI({
         h3(HTML(
-          glue::glue("{get_total_open()}"))
+          glue("{get_total_open()}"))
         )
       })
 

@@ -18,9 +18,11 @@ Imports:
     DT,
     forcats,
     ggplot2,
+    glue,
     gridlayout (>= 0.2.0),
     lubridate,
     pkgload,
+    reactlog,
     shiny,
     waiter
 Remotes: 

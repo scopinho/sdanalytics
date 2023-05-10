@@ -1,39 +1,8 @@
 #' @export openUI
-# Libraries ----------------------------------------------------------
-library(dplyr)
-library(shiny)
-library(waiter)
-library(bslib)
-library(gridlayout)
-library(ggplot2)
-library(forcats)
-library(bsicons)
-library (arrow)
-
-# Data Sources -------------------------------------------------------
-
-
-df <- arrow::open_dataset("./inst/extdata", format="parquet")
-
-
-# Functions ----------------------------------------------------------
-
-
-
-get_unique_labels <- function(df, col) {
-  df |> dplyr::distinct(.data[[col]]) |> dplyr::collect() |> dplyr::filter(!is.na(.data[[col]])) |> dplyr::pull()
-}
-
-get_min_value <- function(df, col) {
-  df |> dplyr::distinct(.data[[col]]) |> dplyr::collect() |> dplyr::slice_min(.data[[col]], na_rm = TRUE) |> dplyr::pull()
-}
-
-get_max_value <- function(df, col) {
-  df |> dplyr::distinct(.data[[col]]) |> dplyr::collect() |> dplyr::slice_max(.data[[col]], na_rm = TRUE) |> dplyr::pull()
-}
 
 
 # Main -------------------------------------------------------
+
 
 openUI <- function(...)  {
 
@@ -61,7 +30,7 @@ openUI <- function(...)  {
     # ),
     
     sidebar = sidebar(
-      
+
       dateRangeInput(
         inputId = "opened_at",
         label = "Opened Date",
@@ -69,7 +38,9 @@ openUI <- function(...)  {
         end = get_max_value(df, "opened_at") |> format("%Y-%m-%d %H:%M"),
         min = get_min_value(df, "opened_at") |> format("%Y-%m-%d %H:%M"),
         max = get_max_value(df, "opened_at") |> format("%Y-%m-%d %H:%M")
-    ),
+      ),
+      
+
       dateRangeInput(
         inputId = "resolved_at",
         label = "Resolved Date",
@@ -113,6 +84,11 @@ openUI <- function(...)  {
   )
   
   ## Server -------------------------------------------------------
+  
+  # Data Sources -------------------------------------------------------
+
+
+
   
   server <- function(input, output, session) {
     

@@ -17,3 +17,7 @@
 - Change app.R to use the pkg (myApp::myApp())
 - Add #' @export myApp to the wrapping function and Run devtools::document() 
 - Add app.R in the .Rbuildignore (usethis::use_build_ignore("app.R"))
+
+### 
+
+
