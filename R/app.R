@@ -4,13 +4,20 @@
 # Main -------------------------------------------------------
 
 
+
 openUI <- function(...)  {
+  
+  df <- get_db()
 
   ## UI ------------------------------------------------------ 
   ui <- page_navbar(
     
+
+    
+    
     nav(
       title = "Home",
+      actionButton("debug", "debug"),
       mod_home_UI("home")
     ),
     nav(
@@ -85,25 +92,76 @@ openUI <- function(...)  {
   
   ## Server -------------------------------------------------------
   
-  # Data Sources -------------------------------------------------------
+  # Data Sources --------------------------------------------------
 
 
-
-  
   server <- function(input, output, session) {
     
-
+    observeEvent(input$debug, {
+      browser()
+    })
+    
+    
     params <- reactiveValues()
-    params$df <- df
+    #params2 <- reactiveValues()
 
-    params$opened_at <- reactive({input$opened_at})
-    params$resolved_at <- reactive({input$resolved_at})
-    params$assignment_group <- reactive({input$assignment_group})
-    params$incident_state <- reactive({input$incident_state})
-    params$made_sla <- reactive({input$made_sla})
-    params$reopen_count <- reactive({input$reopen_count})
+    
+    # filters <- reactive({
+    #   reactiveValuesToList(input)
+    #   })
 
-    mod_home_Server("home", params)
+    # params2 <- reactive({
+    #   
+    #   list <- filters()[stringr::str_detect(names(filters()),"opened_at|resolved_at|assignment_group|incident_state|made_sla|reopen_count")]  
+    #   #print(glue::glue("inside params2!: {list[1]}"))
+    #   
+    #   for (i in seq_along(list)) { 
+    #     print(list[i])
+    #     #params[[names(list())[i]]] <- list()[[i]]
+    #     }
+    #   
+    # })
+    
+    # observe({
+    #   params2()
+    #   #print(paste0("params2 observed!", params2()))
+    # })
+    
+    #for (i in length(params2())) { params[[names(params2())[i]]] <- params2()[[i]]}
+    
+    params$opened_at <- reactive({
+      req(input$opened_at)
+      input$opened_at
+      })
+    params$resolved_at <- reactive({
+      req(input$resolved_at)
+      input$resolved_at
+      })
+    params$assignment_group <- reactive({
+      req(input$assignment_group)
+      input$assignment_group
+      })
+    params$incident_state <- reactive({
+      req(input$incident_state)
+      input$incident_state
+      })
+    params$made_sla <- reactive({
+	    req(input$made_sla)
+	    input$made_sla
+    })
+    params$reopen_count <- reactive({
+      req(input$reopen_count)
+      input$reopen_count
+      })
+
+    params2 <- reactive({
+    	input$made_sla
+	input$opened_at[1]
+	input$opened_at[2]
+    })
+
+
+    mod_home_Server("home", df, params, params2)
     
   }
   

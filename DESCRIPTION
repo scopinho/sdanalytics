@@ -1,6 +1,6 @@
 Package: sdanalytics
 Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Version: 0.0.0.9001
 Authors@R: 
     person("Eric", "Scopinho", , "eric.scopinho@techforg.com", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
@@ -10,7 +10,6 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Imports: 
-    arrow,
     bsicons,
     bslib (>= 0.4.2.9000),
     devtools,
@@ -21,10 +20,11 @@ Imports:
     glue,
     gridlayout (>= 0.2.0),
     lubridate,
-    pkgload,
-    reactlog,
+    arrow,
     shiny,
-    waiter
+    rlang,
+    waiter,
+    purrr
 Remotes: 
     rstudio/gridlayout,
     rstudio/bslib

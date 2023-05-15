@@ -1,7 +1,4 @@
 
-
-
-
 # UI --------------------------------------------------------------------------
 mod_home_UI <- function(id) {
   ns <- NS(id)
@@ -9,9 +6,9 @@ mod_home_UI <- function(id) {
     
     #tags$head(includeCSS("./www/styles.css")),
     
-    waiter::autoWaiter(c(ns("plot"))),
+    #waiter::autoWaiter(c(ns("plot"))),
     
-    waiter::waiterShowOnLoad(html = spin_fading_circles(), color = "black"),
+    #waiter::waiterShowOnLoad(html = spin_fading_circles(), color = "black"),
     
   page_fluid(
   
@@ -119,82 +116,32 @@ grid_container(
 }
 
 # SERVER --------------------------------------------------------------------------
-mod_home_Server <- function(id, params) {
+mod_home_Server <- function(id, df, params, params2) {
   moduleServer(
     id,
     function(input, output, session) {
       
-      get_total <- reactive({
 
-        total <- df |>
-          dplyr::filter (.data[["made_sla"]] == params$made_sla(),
-                         .data[["opened_at"]] >= params$opened_at()[1],
-                         .data[["opened_at"]] <= params$opened_at()[2],
-                         .data[["resolved_at"]] >= params$resolved_at()[1],
-                         .data[["resolved_at"]] <= params$resolved_at()[2],
-                         .data[["assignment_group"]] %in% params$assignment_group(),
-                         .data[["incident_state"]] %in% params$incident_state()
-                         ) |>
-          dplyr::count() |>
-          dplyr::collect() |>
-          dplyr::pull()
-
-        return (total)
-      })
       
-      get_total_table <- reactive({
-        
-        total <- df |>
-          dplyr::filter (.data[["made_sla"]] == params$made_sla(),
-                         .data[["opened_at"]] >= params$opened_at()[1],
-                         .data[["opened_at"]] <= params$opened_at()[2],
-                         .data[["resolved_at"]] >= params$resolved_at()[1],
-                         .data[["resolved_at"]] <= params$resolved_at()[2],
-                         .data[["assignment_group"]] %in% params$assignment_group(),
-                         .data[["incident_state"]] %in% params$incident_state()
-          ) |>
-          dplyr::collect() 
-        
-        return (total)
-      })
-
-      get_total_open <- reactive({
-
-        total <- df |>
-          dplyr::filter (.data[["made_sla"]] == params$made_sla(),
-                         .data[["opened_at"]] >= params$opened_at()[1],
-                         .data[["opened_at"]] <= params$opened_at()[2],
-                         .data[["resolved_at"]] >= params$resolved_at()[1],
-                         .data[["resolved_at"]] <= params$resolved_at()[2],
-                         .data[["assignment_group"]] %in% params$assignment_group(),
-                         .data[["incident_state"]] %in% c("New", "Active")
-
-          ) |>
-          dplyr::count() |>
-          dplyr::collect() |>
-          dplyr::pull()
-
-        return (total)
-      })
-
-      get_SLA_missed <- reactive({
-
-        total <- df |>
-          dplyr::filter (.data[["opened_at"]] >= params$opened_at()[1],
-                         .data[["opened_at"]] <= params$opened_at()[2],
-                         .data[["resolved_at"]] >= params$resolved_at()[1],
-                         .data[["resolved_at"]] <= params$resolved_at()[2],
-                         .data[["assignment_group"]] %in% params$assignment_group(),
-                         .data[["incident_state"]] %in% params$incident_state()
-          ) |>
-          dplyr::collect() |>
-          dplyr::group_by(.data[["made_sla"]]) |>
-          dplyr::summarise(n=n()) |>
-          dplyr::mutate(perc = n/sum(n)) |>
-          dplyr::filter(.data[["made_sla"]] == TRUE) |> dplyr::select(perc) |> dplyr::pull() |> round(digits=2)
-
-        return (total)
-      })
+# 
+#       get_SLA_missed <- reactive({
+# 
+#         total <- df |>
+#           dplyr::filter (.data[["opened_at"]] >= params$opened_at()[1],
+#                          .data[["opened_at"]] <= params$opened_at()[2],
+#                          .data[["resolved_at"]] >= params$resolved_at()[1],
+#                          .data[["resolved_at"]] <= params$resolved_at()[2],
+#                          .data[["assignment_group"]] %in% params$assignment_group(),
+#                          .data[["incident_state"]] %in% params$incident_state()
+#           ) |>
+#           dplyr::collect() |>
+#           dplyr::group_by(.data[["made_sla"]]) |>
+#           dplyr::summarise(n=n()) |>
+#           dplyr::mutate(perc = n/sum(n)) |>
+#           dplyr::filter(.data[["made_sla"]] == TRUE) |> dplyr::select(.data[["perc"]]) |> dplyr::pull() |> round(digits=2)
+# 
+#         return (total)
+#       })
 
       # output$plot <- renderPlot({
       # 
@@ -228,31 +175,89 @@ mod_home_Server <- function(id, params) {
       
       output$table1 <- DT::renderDT({
         
-        get_total_table()
+         get_total_table(select(df, made_sla, opened_at, resolved_at, assignment_group,incident_state) |> 
+                                  filter(made_sla == params$made_sla(),
+                                         opened_at >= params$opened_at()[1],
+                                         opened_at <= params$opened_at()[2],                                         
+                                         resolved_at >= params$resolved_at()[1],
+                                         resolved_at <= params$resolved_at()[2],
+                                          assignment_group %in% params$assignment_group(),
+                                          incident_state %in% params$incident_state()
+                                         )
+                                )
 
       })
       
       output$valueBox1<- renderUI({
         
+        #date <- as.Date(params$opened_at()[1])
+        #filter <- glue("opened_at >= as.Date(\"2017-01-01\")")
+        
+  
+        value <- get_total_rows(select(df, everything()) |> 
+                                  filter(made_sla == params$made_sla(),
+                                         opened_at >= params$opened_at()[1],
+                                         opened_at <= params$opened_at()[2],
+                                         resolved_at >= params$resolved_at()[1],
+                                         resolved_at <= params$resolved_at()[2],
+                                         assignment_group %in% params$assignment_group(),
+                                         incident_state %in% params$incident_state()
+                                         )
+                                )
+       
         h3(HTML(
-          glue(" {get_total()} Tickets"))
+          glue(" {value} Tickets")
+          )
           )
         })
 
-      output$valueBox2 <- renderUI({
+       output$valueBox2 <- renderUI({
+         
+         
+         value <- get_total_rows(select(df, everything()) |> 
+                                   filter(made_sla == params$made_sla(),
+                                          opened_at >= params$opened_at()[1],
+                                          opened_at <= params$opened_at()[2],
+                                          resolved_at >= params$resolved_at()[1],
+                                          resolved_at <= params$resolved_at()[2],
+                                          assignment_group %in% params$assignment_group(),
+                                          incident_state %in% c("Active", "New")
+                                  )
+         )
+         
+         h3(HTML(
+           glue(" {value} Tickets")
+         )
+         )
+       })
 
-        h3(HTML(
-          glue("SLA: {get_SLA_missed()}%"))
-        )
-      })
+       output$valueBox3 <- renderUI({
+       
+        req(params$made_sla())
+         req(params$opened_at())
+         req(params$resolved_at())
+         req(params$assignment_group())
+         req(params$incident_state())
+         
+         value <- get_total_rows(select(df, everything()) |> 
+                                  filter(made_sla == params$made_sla(),
+                                          opened_at >= params$opened_at()[1],
+                                          opened_at <= params$opened_at()[2],
+                                          resolved_at >= params$resolved_at()[1],
+                                          resolved_at <= params$resolved_at()[2],
+                                          assignment_group %in% params$assignment_group(),
+                                          incident_state %in% c("Active", "New")
+                                          
+                                   )
+         )
+         
+         h3(HTML(
+           glue(" {value} Tickets")
+         )
+         )
+       })
 
-      output$valueBox3 <- renderUI({
-        h3(HTML(
-          glue("{get_total_open()}"))
-        )
-      })
-
-      waiter::waiter_hide()  
+      #waiter::waiter_hide()  
     }
   )
 }
