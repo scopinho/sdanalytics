@@ -24,7 +24,10 @@ Imports:
     shiny,
     rlang,
     waiter,
-    purrr
+    purrr,
+    htmltools,
+    plotly,
+    echarts4r
 Remotes: 
     rstudio/gridlayout,
     rstudio/bslib

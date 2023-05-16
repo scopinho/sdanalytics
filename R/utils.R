@@ -12,6 +12,7 @@
 #' @import arrow
 #' @import rlang
 #' @import purrr
+#' @importFrom htmltools css
 
 
 get_db <- function() {
