@@ -18,16 +18,12 @@ Imports:
     forcats,
     ggplot2,
     glue,
-    gridlayout (>= 0.2.0),
     lubridate,
     arrow,
     shiny,
-    rlang,
     waiter,
-    purrr,
     htmltools,
-    plotly,
-    echarts4r
+    echarts4r,
+    pandoc
 Remotes: 
-    rstudio/gridlayout,
     rstudio/bslib

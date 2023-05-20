@@ -5,3 +5,5 @@
 ^sdanalytics\.Rproj$
 ^app\.R$
 ^LICENSE\.md$
+.*big\.parquet$
+^EDA$

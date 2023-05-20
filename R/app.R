@@ -5,14 +5,22 @@
 
 openUI <- function(...) {
   
-  df <- get_db()
+  argsv <- list(...)
+  
+  dataset_incidents <- get_dataset(path = NULL)
+  
+  df <- semi_join(dataset_incidents, dataset_incidents |> 
+                group_by(number) |> 
+                summarise(sys_updated_at = max(sys_updated_at)))
+  
+  #df <- get_db(path = "/home/scopinho/github/sdanalytics/inst/extdata/part-0-big.parquet")
   
   accordion_panel1 <- accordion_panel(
     " Dates",
     dateRangeInput(
       inputId = "opened_at",
       label = strong("Opened Date"),
-      start = NULL, #get_min_value(df, "opened_at") |> format("%Y-%m-%d %H:%M"),
+      start = as_datetime(as.Date(get_max_value(df, "opened_at")) - days(90)) |> format("%Y-%m-%d %H:%M"),
       end = NULL, #get_max_value(df, "opened_at") |> format("%Y-%m-%d %H:%M"),
       min = get_min_value(df, "opened_at") |> format("%Y-%m-%d %H:%M"),
       max = get_max_value(df, "opened_at") |> format("%Y-%m-%d %H:%M")
@@ -35,10 +43,8 @@ openUI <- function(...) {
       inputId = "assignment_group",
       label = strong("Assignment Group"),
       choices = get_unique_labels(df, "assignment_group"),
-      selected = NULL, #get_max_value(df, "assignment_group"),
+      selected = "Group 70", #get_max_value(df, "assignment_group"),
       multiple = TRUE
-      
-      #,options = list(placeholder = "All")
     ),
   
     selectizeInput(
@@ -62,23 +68,37 @@ openUI <- function(...) {
   
 
   ## UI ------------------------------------------------------
-  ui <- page_navbar(
+  ui <- page_fluid( 
     
-    tags$head(includeCSS("./www/styles.css")),
+    includeCSS(system.file("www/styles.css", package = "sdanalytics")),
 
+    page_navbar(
+      
     nav(
       title = "Home",
       #actionButton("debug", "debug"),
       mod_home_UI("home")
     ),
+    
+    nav_menu("Assingment Group",
+             nav("Group Details",
+                 mod_groups_UI("groups", df)
+                 ),
+             nav("Groups Analysis")
+             ),
+    
     nav(
-      title = "Details"
-    ),
+      title = "Help"
+    )
+    
+    ,
     
     title = "SD Analytics",
 
-    sidebar = sidebar(
+    sidebar = sidebar(id = "sidebar_main",
       accordion(
+        multiple = TRUE,
+        open = c(" Dates", " Values"),
         
       accordion_panel1
       ,
@@ -93,6 +113,7 @@ openUI <- function(...) {
 
     theme = bs_theme(version = 5)
   )
+  )
 
   ## Server -------------------------------------------------------
 
@@ -101,36 +122,15 @@ openUI <- function(...) {
 
   server <- function(input, output, session) {
     observeEvent(input$debug, {
-      browser()
+      #sidebar_toggle(id = "sidebar_main")
+      #browser()
     })
+    
+    #bs_themer()
+    #bs_theme_update(theme, bootswatch = "default")
 
-
+    
     params <- reactiveValues()
-
-
-
-    # filters <- reactive({
-    #   reactiveValuesToList(input)
-    #   })
-
-    # params2 <- reactive({
-    #
-    #   list <- filters()[stringr::str_detect(names(filters()),"opened_at|resolved_at|assignment_group|incident_state|made_sla|reopen_count")]
-    #   #print(glue::glue("inside params2!: {list[1]}"))
-    #
-    #   for (i in seq_along(list)) {
-    #     print(list[i])
-    #     #params[[names(list())[i]]] <- list()[[i]]
-    #     }
-    #
-    # })
- 
-    # observe({
-    #   params2()
-    #   #print(paste0("params2 observed!", params2()))
-    # })
-
-    # for (i in length(params2())) { params[[names(params2())[i]]] <- params2()[[i]]}
 
     params$opened_at <- reactive({
       input$opened_at
@@ -151,7 +151,37 @@ openUI <- function(...) {
       input$reopen_count
     })
     
-    mod_home_Server("home", df, params)
+    
+    
+    filtered_data <- reactive(label = "Global_Filters",{
+      
+      #data <- select(df, number, made_sla, opened_at, resolved_at, assignment_group, incident_state, category)
+      data <- select(df, everything())
+      
+      if (is.na(params$opened_at()[1])) {data <- data}
+      else{data <- filter(data, opened_at >= params$opened_at()[1])}
+      
+      if (is.na(params$opened_at()[2])) {data <- data}
+      else{data <- filter(data, opened_at <= params$opened_at()[2])}
+      
+      if (is.na(params$resolved_at()[1])) {data <- data}
+      else{data <- filter(data, resolved_at >= params$resolved_at()[1])}
+      
+      if (is.na(params$resolved_at()[2])) {data <- data}
+      else{data <- filter(data, resolved_at <= params$resolved_at()[2])}
+      
+      if (is.null(params$assignment_group())) {data <- data}
+      else{data <- filter(data,assignment_group %in% params$assignment_group())}
+      
+      if (is.null(params$incident_state())) {data <- data}
+      else{data <- filter(data,incident_state %in% params$incident_state())}
+      
+      data <- data
+
+    })
+    
+    mod_home_Server("home", df, filtered_data)
+    mod_groups_Server("groups", df, params)
   }
 
   shinyApp(ui, server, ...)

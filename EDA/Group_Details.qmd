@@ -1,0 +1,169 @@
+```{r}
+devtools::load_all()
+
+dataset_incidents <- get_dataset(path = NULL)
+  
+  
+df <- semi_join(dataset_incidents, dataset_incidents |> 
+                group_by(number) |> 
+                summarise(sys_updated_at = max(sys_updated_at)))
+```
+
+```{r}
+assignment_group = "Group 59"
+
+get_total_tkts_by <- function(...){
+    df|> dplyr::filter(assignment_group == (...))|> count()|> collect()
+}
+
+get_total_tkts_by(assignment_group)
+
+```
+
+```{r}
+
+get_tkts_by <- function(...){
+    df|> dplyr::filter(assignment_group == (...))|> collect()
+}
+
+get_tkts_by(assignment_group)
+
+```
+```{r}
+
+group_resolvers <- df|> dplyr::filter(assignment_group == "Group 59")|> 
+  select (resolved_by) |>
+  distinct()|>
+  count()|>
+  collect()|>
+    pull()
+
+tickets_received <- df|> dplyr::filter(assignment_group == "Group 59")|> 
+  select (number) |>
+  distinct()|>
+  count()|>
+  collect()|>
+    pull()
+
+tickets_closed <- df|> dplyr::filter(assignment_group == "Group 59")|> 
+  select (number, incident_state) |>
+  filter (incident_state %in% c("Resolved", "Closed")) |>
+  distinct(number)|>
+  count()|>
+  collect()|>
+    pull()
+  
+group_resolvers <- glue("<b>Group Resolvers</b>: {group_resolvers}<br>
+                        <b>Tickets Received</b>: {tickets_received}<br>
+                        <b>Tickets Closed</b>: {tickets_closed}")
+
+card(card_header("Resolvers"),
+  markdown(group_resolvers)
+  
+)
+
+```
+
+
+
+
+```{r}
+data <- df|> dplyr::filter(assignment_group == "Group 59")|> 
+  select (number, category) |>
+  group_by(category)|>
+  summarise(value = n()) |> arrange (value) |> head (10)|> collect()
+
+card(
+  card_header("Top Categories"),
+echarts4r::e_charts(data , x = category) |> 
+  e_bar(serie = value)|>
+  e_legend(show = FALSE) |>
+  e_labels(show = FALSE)|>
+  e_tooltip(trigger = "item") |>
+  e_flip_coords() |>
+  e_grid(left = "11%")
+)
+
+```
+```{r}
+data <- df|> dplyr::filter(assignment_group == "Group 59")|> 
+  select (number, category) |>
+  group_by(category)|>
+  summarise(value = n()) |> arrange (value) |> collect()
+
+card(
+  card_header("Top Categories"),
+ e_charts(data, category) |> 
+  e_polar() |> 
+  e_angle_axis(category) |>
+  e_radius_axis() |> 
+  e_bar(value, coord_system = "polar") |> 
+  e_tooltip(trigger = "item")
+  #e_scatter(value, coord_system = "polar")
+)
+
+```
+```{r}
+data <- df|> dplyr::filter(assignment_group == "Group 59")|> 
+  select (number, opened_at) |>
+  group_by(wday = wday(opened_at), hour = hour(opened_at))|>
+  summarise(value = n()) |> 
+  arrange (value) |> 
+  collect()|>
+  mutate (wday = as.character(wday(wday, label = TRUE, abbr = TRUE)))
+
+card(
+  card_header("Days of the Week"),
+  e_charts(data|> group_by(wday), wday) |> 
+    e_tooltip(trigger = "item")|>
+    e_effect_scatter(hour, value) |> 
+    e_y_axis(max = "24", formatter = "{value}:00") |>
+                 #e_visual_map(value) |>
+                 e_legend(FALSE) 
+)
+```
+```{r}
+
+sla <- df|> filter(assignment_group == "Group 59")|> 
+  select (number, made_sla) |>
+  group_by(made_sla)|>
+  summarise(value = n()) |>
+  collect()|>
+  mutate (perc = round(100*(value / sum(value)),1))|>
+  filter (made_sla == TRUE)|> 
+  select (perc) |>
+  collect()|>
+  pull()
+
+e_charts() |> 
+  e_gauge(sla, "SLA") 
+```
+```{r}
+
+data <- df|> filter(assignment_group == "Group 59")|> 
+  select (number, opened_at,resolved_at, closed_at) |>
+  arrange (opened_at) |> 
+  mutate (opened_at = as_date(opened_at),
+          resolved_at = as_date(resolved_at),
+          closed_at = as_date(closed_at))|>
+  collect()
+
+dates <- tibble(date = as_date(seq.Date(as_date(min(data$opened_at)), as_date(max(data$closed_at)), by = "day")))
+
+calendar_opened <- left_join(dates, select(data, number, opened_at), by = join_by(date == opened_at)) |> group_by(date)|> count(name = "opened_at")
+calendar_resolved <- left_join(dates, select(data, number, resolved_at), by = join_by(date == resolved_at))|> group_by(date)|> count(name = "resolved_at")
+calendar_closed <- left_join(dates, select(data, number, closed_at), by = join_by(date == closed_at))|> group_by(date)|> count(name = "closed_at")
+
+calendar <- left_join(calendar_opened, left_join(calendar_resolved, calendar_closed))|> ungroup()
+
+#calendar <- calendar |> tidyr::pivot_longer(cols = c("opened_at", "resolved_at", "closed_at"), names_to = "status", values_to = "count") |> arrange(date)
+
+
+calendar |> e_charts(x = date)|>
+  e_bar(opened_at, name = "Opened")|>
+  e_step(closed_at, name = "Closed")|>
+  e_datazoom(type = "slider") 
+
+```
+
+

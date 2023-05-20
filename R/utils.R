@@ -1,25 +1,31 @@
 # Libraries ----------------------------------------------------------
 #' @importFrom forcats as_factor
-#' @import ggplot2
 #' @import dplyr
-#' @import waiter
 #' @import bslib
-#' @import gridlayout
-#' @import bsicons
 #' @import shiny
-#' @import glue
-#' @import lubridate
-#' @import arrow
-#' @import rlang
-#' @import purrr
 #' @importFrom htmltools css
+#' @importFrom lubridate as_datetime as_date days wday
+#' @importFrom glue glue
+#' @importFrom waiter autoWaiter
+#' @importFrom arrow open_dataset to_duckdb
+#' @importFrom bsicons bs_icon
+#' @importFrom echarts4r renderEcharts4r echarts4rOutput e_toolbox_feature e_area e_step e_gauge e_density e_visual_map e_title e_river e_y_axis e_effect_scatter e_flip_coords e_scatter e_angle_axis e_radius_axis e_polar e_line e_tooltip e_datazoom e_bar e_charts e_pie e_legend e_grid e_theme_custom e_labels 
+#' @importFrom rmarkdown pandoc_available
 
 
-get_db <- function() {
-  arrow::open_dataset(system.file("extdata", package = "sdanalytics"),
-  format = "parquet")
-}
 
+get_dataset <- function(path) {
+  
+  if (is.null(path)){
+    arrow <- arrow::open_dataset(system.file("extdata/part-0-small.parquet", package = "sdanalytics"),format = "parquet")
+
+  }else{
+    arrow <- arrow::open_dataset(sources = path,format = "parquet")
+    
+  }
+  return(arrow)
+  }
+  
 
 # Functions ----------------------------------------------------------
 
@@ -63,6 +69,7 @@ get_total_table <- function(df) {
 
 get_sla_missed <- function(df) {
   df |> 
+  filter (incident_state == "Closed")|>
   group_by(made_sla)|> 
   summarise(n = n()) |> 
   collect()|> mutate(perc = n/sum(n)*100) |> 

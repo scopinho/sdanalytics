@@ -4,8 +4,9 @@ mod_home_UI <- function(id) {
   ns <- NS(id)
   
   card1 <- card(card_body(
+    style = "padding: 0",
     value_box(
-      class = c("text-dark"),
+      class = "text-dark",
       style = "--bs-primary-rgb: 251,139,36;",
       title = "Total",
       value = uiOutput(ns("totalTickets")),
@@ -13,10 +14,16 @@ mod_home_UI <- function(id) {
     )
   ))
   
+  card1_1 <- card(card_body(style = "vertical-align: \"middle\";",
+    {uiOutput(ns("summaryCard"))}
+    )
+  )
+                           
   card2 <- card(card_body(
+    style = "padding: 0",
     value_box(
       class = c("text-light"),
-      style = "--bs-primary-rgb: 112,168,132;",
+      style = "--bs-primary-rgb: 112,000,132;",
       title = "Open",
       value = uiOutput(ns("openTickets")),
       showcase = bsicons::bs_icon("pip-fill")
@@ -24,6 +31,7 @@ mod_home_UI <- function(id) {
   ))
   
   card3 <- card(card_body(
+    style = "padding: 0",
     value_box(
       class = c("text-light"),
       style = "--bs-primary-rgb: 72,77,109;",
@@ -33,51 +41,45 @@ mod_home_UI <- function(id) {
     )
   ))
   
-  
-  card4 <- card(plotOutput((ns("plot_donut_sla_ggplot"))),
-                full_screen = TRUE)
-  
-  card5 <- card(plotly::plotlyOutput((ns("plot_col_inc_state_ggplot"))),
-                full_screen = TRUE)
-  
-  card6 <- card(card_header ("Ticket Details"),
+  card6 <- card(card_header ("Ticket Details (Max. 10k rows)"),
                 card_body(DT::DTOutput((ns(
                   "detailTable"
                 )))),
                 full_screen = TRUE
                 )
   
-  card7 <- card(echarts4r::echarts4rOutput((ns("plot_donut_sla_echarts"))),
+  card7 <- card(card_header("TOP 10 Categories"),
+                card_body(echarts4rOutput((ns("plot_donut_top_cats_echarts")))),
                 full_screen = TRUE)
   
-  card8 <- card(card_header ("Monthly SLA"),
+  card8 <- card(card_header ("Daily Tickets"),
                 card_body(
-                  echarts4r::echarts4rOutput((ns("plot_col_sla_month_echarts")))
+                  echarts4rOutput((ns("plot_col_daily_echarts")))
                   ),
                 full_screen = TRUE)
   
   
   card9 <- card(card_header ("Monthly SLA"),
-                card_body(plotly::plotlyOutput((
-                  ns("plot_col_sla_month_plotly")
+                card_body(echarts4rOutput((
+                  ns("plot_col_sla_month_echarts")
                 ))),
                 full_screen = TRUE)
   
   tagList(
 
-    waiter::autoWaiter(c(ns("plot"))),
+    #waiter::autoWaiter(c(ns("plot"))),
+    waiter::autoWaiter(),
 
-    waiter::waiterShowOnLoad(html = spin_fading_circles(), color = "black"),
+    #waiter::waiterShowOnLoad(html = spin_fading_circles(), color = "black"),
 
     page_fluid(
       
       layout_column_wrap(
          width = NULL,
-         style = css(grid_template_columns = "1fr 1fr 1fr"),
-         height = 150,
+         style = css(grid_template_columns = "1fr 1fr 1fr 2fr"),
+         height = 130,
          
-        card1, card2, card3
-        
+        card1, card2, card3, card1_1
        ),
       
       p(),
@@ -93,7 +95,7 @@ mod_home_UI <- function(id) {
       
       layout_column_wrap(
         width = NULL,
-        height = 400,
+        height = 500,
         style = css(grid_template_columns = "2fr"),
         card6
       )
@@ -104,178 +106,129 @@ mod_home_UI <- function(id) {
 }
 
 # SERVER --------------------------------------------------------------------------
-mod_home_Server <- function(id, df, params) {
+mod_home_Server <- function(id, df, filtered_data) {
   moduleServer(
     id,
     function(input, output, session) {
       
-      filtered_data <- reactive({
-      
-        data <- select(df, made_sla, opened_at, resolved_at, assignment_group, incident_state)
-        
-        if (is.na(params$opened_at()[1])) {data <- data}
-        else{data <- filter(data, opened_at >= params$opened_at()[1])}
 
-        if (is.na(params$opened_at()[2])) {data <- data}
-        else{data <- filter(data, opened_at <= params$opened_at()[2])}
-
-        if (is.na(params$resolved_at()[1])) {data <- data}
-        else{data <- filter(data, resolved_at >= params$resolved_at()[1])}
-
-        if (is.na(params$resolved_at()[2])) {data <- data}
-        else{data <- filter(data, resolved_at <= params$resolved_at()[2])}
-
-        if (is.null(params$assignment_group())) {data <- data}
-        else{data <- filter(data,assignment_group %in% params$assignment_group())}
-
-        if (is.null(params$incident_state())) {data <- data}
-        else{data <- filter(data,incident_state %in% params$incident_state())}
-        
-        data <- data |> collect()       
-      })
-      
       output$detailTable <- DT::renderDT({
-        DT::datatable(filtered_data(), fillContainer = TRUE)
+        
+        
+        info <- getCurrentOutputInfo()
+        
+        if (info$height() < 600){
+        DT::datatable(filtered_data() |> 
+                        slice_head(n = 10000)|>
+                        collect(), 
+                        fillContainer = TRUE)
+        }else {
+          DT::datatable(filtered_data() |> 
+                          slice_head(n = 10000)|>
+                          collect(), 
+                        extensions = 'Buttons',
+                        options = list(
+                          paging = TRUE,
+                          searching = TRUE,
+                          #fixedColumns = TRUE,
+                          #autoWidth = TRUE,
+                          ordering = TRUE,
+                          lengthMenu = list(c(10, 25, 50, 100, 10000), 
+                                            c('10', '25', '50', '100', '10000')),
+                          dom = 'lfrtipB',
+                          buttons = c('copy', 'csv', 'excel')),
+                        fillContainer = TRUE)
+        }
+        
+      }, server = TRUE)
+
+     
+      output$plot_donut_top_cats_echarts <- renderEcharts4r({
+        data <-
+          filtered_data() |> 
+          select(category)|> 
+          count(category)|> 
+          slice_head(n=10) |> 
+          arrange(desc(n))|> 
+          collect()
+        
+          e_charts(data, x = category) |>
+          e_pie(serie = n, radius = c("60%", "80%")) |>
+          e_legend(show = FALSE)|>
+          e_tooltip(trigger = "item")
       })
 
-      output$plot_donut_sla_ggplot <- renderPlot({
-        data <-
-          get_total_table(
-            select(
-              df,
-              made_sla,
-              opened_at,
-              resolved_at,
-              assignment_group,
-              incident_state
-            ) |>
-              filter(
-                opened_at >= params$opened_at()[1],
-                opened_at <= params$opened_at()[2],
-                resolved_at >= params$resolved_at()[1],
-                resolved_at <= params$resolved_at()[2],
-                assignment_group %in% params$assignment_group(),
-                incident_state %in% params$incident_state()
-              )
-          ) |> get_sla_missed() |>
-          as_tibble() |>
-          mutate(missed = -1 * (as.numeric(value) - 100)) |>
-          mutate (value = as.numeric(value)) |>
-          tidyr::pivot_longer(everything(), names_to = "category", values_to =
-                                "count")
+      output$plot_col_daily_echarts <- renderEcharts4r({
         
-        data$fraction <- data$count / sum(data$count)
-        data$ymax <- cumsum(data$fraction)
-        data$ymin <- c(0, head(data$ymax, n = -1))
-        data$labelPosition <- (data$ymax + data$ymin) / 2
-        data$label <- paste0(data$category, "\n", data$count, " %")
-        
-        ggplot(data,
-               aes(
-                 ymax = ymax,
-                 ymin = ymin,
-                 xmax = 4,
-                 xmin = 3,
-                 fill = category
-               )) +
-          geom_rect() +
-          geom_label(x = 3.5,
-                     aes(y = labelPosition, label = label),
-                     size = 6) +
-          scale_fill_brewer(palette = 4) +
-          coord_polar(theta = "y") +
-          xlim(c(2, 4)) +
-          theme_void() +
-          theme(legend.position = "none")
-      })
-      
-      output$plot_donut_sla_echarts <- echarts4r::renderEcharts4r({
-        data <-
-          filtered_data() |> get_sla_missed() |>
-          as_tibble() |>
-          mutate(missed = -1 * (as.numeric(value) - 100)) |>
-          mutate (value = as.numeric(value)) |>
-          tidyr::pivot_longer(everything(), names_to = "category", values_to =
-                                "count")
-        
-          echarts4r::e_charts(data, x = category) |>
-          echarts4r::e_pie(serie = count, radius = c("60%", "80%")) |>
-            echarts4r::e_legend(show = FALSE)
-      })
-      
-      output$plot_col_inc_state_ggplot <- plotly::renderPlotly({
-        data <-
-          get_total_table(
-            select(
-              df,
-              made_sla,
-              opened_at,
-              resolved_at,
-              assignment_group,
-              incident_state
-            ) |>
-              filter(
-                opened_at >= params$opened_at()[1],
-                opened_at <= params$opened_at()[2],
-                resolved_at >= params$resolved_at()[1],
-                resolved_at <= params$resolved_at()[2],
-                assignment_group %in% params$assignment_group()
-                #incident_state %in% params$incident_state()
-              )
-          ) 
-        
-        p <- ggplot(data,
-               aes(incident_state, fill = incident_state)) +
-          geom_bar() +
-          theme_void() 
-        
-        plotly::ggplotly(p) |> plotly::config(displayModeBar = F)
+          data <- filtered_data() |>
+            group_by(day = as_date(opened_at))|>
+            summarise(n=n())|>
+            collect() |>  arrange(day)
           
-      })
-      
-      output$plot_col_sla_month_echarts <- echarts4r::renderEcharts4r({
-          data <-
-            filtered_data() |>  mutate(
-              opened_at_year_month = glue::glue(
-                "{lubridate::month(opened_at)}-{lubridate::year(opened_at)}"
-              )
-            ) |> select(made_sla, opened_at_year_month) |> 
-            group_by(opened_at_year_month, made_sla) |> 
-            count() |>
-            mutate (opened_at_year_month = my(opened_at_year_month))
+          info <- getCurrentOutputInfo()
           
-        echarts4r::e_charts(data |> group_by(made_sla), x = opened_at_year_month) |>
-        echarts4r::e_bar(serie = n, label = list(normal = list(show = TRUE)) ) 
+          if (info$height() < 600){
+
+        e_charts(data, x=day) |>
+        e_line(serie = n, name="Tickets", legend = FALSE) |>
+        e_tooltip(trigger = "axis") |>
+        e_grid(top = "8", containLabel=FALSE)  |> 
+              e_datazoom(toolbox=FALSE)}
+          else {
+            e_charts(data, x=day) |>
+              e_line(serie = n, name="Tickets", legend = FALSE) |>
+              e_tooltip(trigger = "axis") |>
+              e_grid(top = "8", containLabel=FALSE)|>
+              e_datazoom()
+          }
          
       })
       
-      output$plot_col_sla_month_plotly <- plotly::renderPlotly({
+      output$plot_col_sla_month_echarts <- renderEcharts4r({
         
-        data <- filtered_data()
-          
-    
-          data <- data |> mutate(
-            opened_at_year_month = glue::glue(
-              "{lubridate::month(opened_at)}-{lubridate::year(opened_at)}"
-            )
-          ) |> select(made_sla, opened_at_year_month) |> 
-          group_by(opened_at_year_month, made_sla) |> 
-          count() |>
-          mutate (opened_at_year_month = my(opened_at_year_month))
+        data <- filtered_data() |> 
+          filter(incident_state == "Closed")|>
+          select(opened_at, made_sla)|> 
+          group_by(opened_at_year_month = format(opened_at, "%Y-%m"), made_sla)|> 
+          summarise(n=n()) |> 
+          group_by(opened_at_year_month)|>
+          collect()|>
+          mutate(perc = round(100*(n/sum(n)),1)) |> 
+          collect() |>  arrange(opened_at_year_month)
         
-          p <- ggplot (data |> group_by(made_sla), aes(opened_at_year_month, n, fill=made_sla)) +
-            geom_col() +
-            theme_minimal() +
-            labs(y="SLA", x="Month-Year", fill = "SLA")
+          info <- getCurrentOutputInfo()
           
-          plotly::ggplotly(p) |> plotly::config(displayModeBar = F)
+          if (info$height() < 600){
+            
+            e_charts(data |> group_by(made_sla), x= opened_at_year_month) |> 
+              e_bar(serie = perc) |>
+              e_legend(show = TRUE, bottom = 5)|>
+              e_tooltip(trigger = "item") |>
+              e_grid(top = "20") |>
+              e_theme_custom('{"color":["#d2222d","#007000"]}')|>
+              e_labels()
+
+            } else {
+              e_charts(data |> group_by(made_sla), x= opened_at_year_month) |> 
+                e_bar(serie = perc) |>
+                e_legend(show = TRUE, bottom = 5)|>
+                e_tooltip(trigger = "item") |>
+                e_grid(top = "20") |>
+                e_theme_custom('{"color":["#d2222d","#007000"]}')|>
+                e_labels()
+          }
+          
         
       })
       
       output$totalTickets <- renderUI({
 
 
-        value <- get_total_rows(select(filtered_data() , everything()))
+        value <- filtered_data() |> 
+          distinct(number)|> 
+          count()|> 
+          collect() |> 
+          pull()
 
         h3(HTML(
           glue("<div> {value} Tickets<div>")
@@ -283,7 +236,12 @@ mod_home_Server <- function(id, df, params) {
       })
 
       output$openTickets <- renderUI({
-        value <- get_total_rows(filtered_data())
+        value <- filtered_data()|> 
+          filter(incident_state %in% c("New", "Active")) |> 
+          distinct(number) |> 
+          count() |> 
+          collect()|> 
+          pull()
 
         h3(HTML(
           glue("<div> {value} Tickets<div>")
@@ -292,14 +250,33 @@ mod_home_Server <- function(id, df, params) {
       
       output$slaMissed <- renderUI({
 
-      value <- filtered_data() |> get_sla_missed()
+      value <- filtered_data() |> 
+        filter (incident_state == "Closed")|>
+        group_by(made_sla)|> 
+        summarise(n = n()) |> 
+        collect()|> 
+        mutate(perc = n/sum(n)*100) |> 
+        filter (made_sla == TRUE) |> 
+        select(perc) |> 
+        pull()|> 
+        round(1)
 
         h3(HTML(
           glue("<div> {value} % <div>")
         ))
       })
+      
+      output$summaryCard <- renderUI({
+        (HTML(
+          glue(
+            "<b>Total Records</b>: {df |> count()|> pull()} <br>
+            <b>Min Open Date</b>: {df |> get_min_value(\"opened_at\") |> format(\"%Y-%m-%d\")} <br>
+            <b>Max Resolved Date</b>: {df |> get_max_value(\"opened_at\") |> format(\"%Y-%m-%d\")}<br>
+            <b>Total Assignment Groups</b>: {df |> distinct(assignment_group) |> count()|> collect()|> pull()} <br>"
+          )
+        ))
+      })
 
-      waiter::waiter_hide()
     }
   )
 }
