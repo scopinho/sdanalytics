@@ -2,9 +2,9 @@
 - Copy repo SSH URL
 - Create a RStudio project using version control and paste URL
 - Test git commit/pull
-- Activate renv (Tools/Project Options/Environment)
-- Install packages (usethis, pkgload, devtools, shiny, tidyverse, arrow, etc)
-- Create R folder (From Mastering Shiny book - Packages chapter)
+- Activate renv (Tools/Project Options/Environment) renv::activate()
+- Install packages (usethis, pkgload, devtools, shiny, tidyverse, arrow, etc) or copy renv.lock 
+- Create R folder (From Mastering Shiny book - Packages chapter) or usethis::create_package(getwd())
 - Create app.R with a function wrapping all code (i.e myApp) to be called by the package
 - Restart RStudio session 
 - Use CTLR+SHIFT+L to load all pkgs
