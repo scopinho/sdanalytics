@@ -1,9 +1,12 @@
 #' @export openUI
+#' 
 
 
 # Main -------------------------------------------------------
 
 openUI <- function(...) {
+  
+  future::plan(future::multisession, workers = 2)
   
   argsv <- list(...)
   
@@ -20,8 +23,8 @@ openUI <- function(...) {
     dateRangeInput(
       inputId = "opened_at",
       label = strong("Opened Date"),
-      start = as_datetime(as.Date(get_max_value(df, "opened_at")) - days(90)) |> format("%Y-%m-%d %H:%M"),
-      end = NULL, #get_max_value(df, "opened_at") |> format("%Y-%m-%d %H:%M"),
+      start = get_min_value(df, "opened_at") |> format("%Y-%m-%d %H:%M"), # as_datetime(as.Date(get_max_value(df, "opened_at")) - days(365)) |> format("%Y-%m-%d %H:%M"),
+      end = get_max_value(df, "opened_at") |> format("%Y-%m-%d %H:%M"),
       min = get_min_value(df, "opened_at") |> format("%Y-%m-%d %H:%M"),
       max = get_max_value(df, "opened_at") |> format("%Y-%m-%d %H:%M")
     ),
@@ -43,7 +46,7 @@ openUI <- function(...) {
       inputId = "assignment_group",
       label = strong("Assignment Group"),
       choices = get_unique_labels(df, "assignment_group"),
-      selected = "Group 70", #get_max_value(df, "assignment_group"),
+      selected = NULL, #get_max_value(df, "assignment_group"),
       multiple = TRUE
     ),
   
@@ -71,7 +74,7 @@ openUI <- function(...) {
   ui <- page_fluid( 
     
     includeCSS(system.file("www/styles.css", package = "sdanalytics")),
-
+    
     page_navbar(
       
     nav(
@@ -82,9 +85,9 @@ openUI <- function(...) {
     
     nav_menu("Assingment Group",
              nav("Group Details",
-                 mod_groups_UI("groups", df)
-                 ),
-             nav("Groups Analysis")
+                 mod_groups_UI("groups", df)),
+             nav("Groups Analysis",
+                mod_groups_analysis_UI("groups_analysis", df))
              ),
     
     nav(
@@ -182,6 +185,7 @@ openUI <- function(...) {
     
     mod_home_Server("home", df, filtered_data)
     mod_groups_Server("groups", df, params)
+    mod_groups_analysis_Server("groups_analysis", df, filtered_data)
   }
 
   shinyApp(ui, server, ...)

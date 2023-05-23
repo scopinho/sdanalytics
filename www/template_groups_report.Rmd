@@ -2,6 +2,7 @@
 output: pdf_document
 params: 
   group: ""
+  dataset: ""
 ---
 
 ```{r setup, include=FALSE}
@@ -17,10 +18,9 @@ library (dplyr)
 library (arrow)
 library (glue)
 
-glue("Group Report: {params$group}")
+glue("Group Report: {params$group} and Dataset: {params$dataset}")
 ```
 
 # Group Report
 
 This report is a summary of the Service Desk Assginment Group: {params$group}
-

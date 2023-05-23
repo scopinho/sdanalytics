@@ -7,3 +7,9 @@
     padding: 0rem;
     margin-top: 5px;*/
 }
+
+.bslib-sidebar-layout>.collapse-toggle {
+    top: 28rem;
+    bottom: auto;
+}
+

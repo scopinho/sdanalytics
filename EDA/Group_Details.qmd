@@ -12,6 +12,8 @@ df <- semi_join(dataset_incidents, dataset_incidents |>
 ```{r}
 assignment_group = "Group 59"
 
+# Assigment group fpr testing...
+
 get_total_tkts_by <- function(...){
     df|> dplyr::filter(assignment_group == (...))|> count()|> collect()
 }
@@ -19,6 +21,28 @@ get_total_tkts_by <- function(...){
 get_total_tkts_by(assignment_group)
 
 ```
+
+
+```{r}
+table <- df |> select (number, assignment_group, resolved_by) |> 
+  filter(assignment_group == "Group 59") |>
+  group_by (resolved_by) |> 
+  count()|>
+  rename(value  = n) |>
+  collect()
+
+table
+```
+# Our chart....
+
+```{r}
+
+table |> e_charts(x = resolved_by ) |>
+  e_pie(value) |>
+  e_tooltip(trigger = "item")
+
+```
+
 
 ```{r}
 
