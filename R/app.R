@@ -74,7 +74,7 @@ openUI <- function(...) {
   ui <- page_fluid( 
     
     includeCSS(system.file("www/styles.css", package = "sdanalytics")),
-    
+
     page_navbar(
       
     nav(
@@ -96,7 +96,7 @@ openUI <- function(...) {
     
     ,
     
-    title = "SD Analytics",
+    title = div(img(src = "assets/logo.png"), "SD Analytics"),
 
     sidebar = sidebar(id = "sidebar_main",
       accordion(
