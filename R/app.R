@@ -86,7 +86,7 @@ openUI <- function(...) {
     nav_menu("Assingment Group",
              nav("Group Details",
                  mod_groups_UI("groups", df)),
-             nav("Groups Analysis",
+             nav("Sentiment Analysis",
                 mod_groups_analysis_UI("groups_analysis", df))
              ),
     
@@ -96,7 +96,7 @@ openUI <- function(...) {
     
     ,
     
-    title = div(img(src = "assets/logo.png"), "SD Analytics"),
+    title = "SD Analytics", #div(img(src = "assets/logo.png"), "SD Analytics"),
 
     sidebar = sidebar(id = "sidebar_main",
       accordion(
